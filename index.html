@@ -5,22 +5,27 @@
 </head>
 <body>
     <h1>Quick Texture</h1>
-    <div class="controls" id="controls-io">
-        <input type="file" class="" id="fileInput" accept="image/*">
-        <button class="tooltip" id="pasteBtn" >📋<span class="tooltiptext">Paste</span></button>
-        <button class="tooltip" id="newBtn" >📄<span class="tooltiptext">New Blank</span></button>
-        <button class="tooltip" id="saveBtn" disabled>💾<span class="tooltiptext">Save</span></button>
-        <button class="tooltip" id="copyBtn" disabled>📝<span class="tooltiptext">Copy</span></button>
-        <button class="tooltip" id="applyBtn" disabled>➕<span class="tooltiptext">Apply</span></button>
+    <div class="fadeable" id="fadeable-container">
+        <div class="controls" id="controls-io">
+            <input type="file" class="" id="fileInput" accept="image/*">
+            <button class="tooltip" id="pasteBtn" >📋<span class="tooltiptext">Paste</span></button>
+            <button class="tooltip" id="newBtn" >📄<span class="tooltiptext">New Blank</span></button>
+            <hr>
+            <button class="tooltip" id="saveBtn" disabled>💾<span class="tooltiptext">Save</span></button>
+            <button class="tooltip" id="copyBtn" disabled>📝<span class="tooltiptext">Copy</span></button>
+            <button class="tooltip" id="applyBtn" disabled>➕<span class="tooltiptext">Apply</span></button>
+        </div>
+        <div class="controls" id="controls-toolbar">
+        </div>
+        <div id="container">
+            <div class="controls" id="controls-tool-specific">
+            </div>
+            <div class="doc">
+                <canvas id="canvas" class="shadow"></canvas>
+            </div>
+        </div>
     </div>
-    <div class="controls" id="controls-toolbar">
-    </div>
-    <div class="controls" id="controls-tool-specific">
-    </div>
-    <div class="doc">
-        <canvas id="canvas" class="shadow"></canvas>
-    </div>
-    <div id="bg"></div>
+    <div id="bg" class="fadeable fade"></div>
 
 
     <script type="module" src="main.js"></script>

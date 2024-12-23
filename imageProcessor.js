@@ -1,3 +1,4 @@
+import { PreviewView } from './previewView.js';
 
 export class ImageProcessor {
     constructor(canvas, bg) {
@@ -12,6 +13,8 @@ export class ImageProcessor {
         this.texture = this.gl.createTexture();
         this.currentTool = null;
         this.controls = document.getElementById('controls-toolbar');
+
+        this.previewView = new PreviewView(canvas);
     }
 
     initBuffers() {
@@ -96,7 +99,8 @@ export class ImageProcessor {
 
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         
-        this.bg.style.backgroundImage = `url(${this.canvas.toDataURL()})`;
-        this.bg.style.backgroundRepeat = 'repeat';
+        // this.bg.style.backgroundImage = `url(${this.canvas.toDataURL()})`;
+        // this.bg.style.backgroundRepeat = 'repeat';
+        this.previewView.render(4,4);
     }
 }
