@@ -74,6 +74,7 @@ export class TransformTool {
 
     getControls(processor) {
         this.toolBtn.disabled = true;
+        this.reset();
 
         const controls = document.getElementById('controls-tool-controls');
         controls.innerHTML = "";
@@ -152,6 +153,7 @@ export class TransformTool {
 
     reset() {
         this.rotation = 0;
+        this.updateUniforms();
     }
 
     // Control methods

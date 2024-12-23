@@ -2,6 +2,7 @@ import { ImageProcessor } from './imageProcessor.js';
 import { PreviewTool } from './tools/preview.js';
 import { InvertTool } from './tools/invertTool.js';
 import { TransformTool } from './tools/transformTool.js';
+import { LevelsTool } from './tools/LevelsTool.js';
 
 
 function log(text) {
@@ -14,6 +15,7 @@ const processor = new ImageProcessor(canvas);
 const preview = new PreviewTool();
 const invertTool = new InvertTool();
 const transformTool = new TransformTool();
+const levelsTool = new LevelsTool();
 const saveBtn = document.getElementById('saveBtn');
 const copyBtn = document.getElementById('copyBtn');
 const applyBtn = document.getElementById('applyBtn');
@@ -27,6 +29,7 @@ function imageOnLoad(img) {
         processor.initTool(preview);
         processor.initTool(invertTool);
         processor.initTool(transformTool);
+        processor.initTool(levelsTool);
         
         saveBtn.disabled = false;
         copyBtn.disabled = false;
@@ -34,9 +37,7 @@ function imageOnLoad(img) {
         
         initalized = true;
     }
-    else {
-        transformTool.reset();
-    }
+
 
     processor.setTool(preview);
 
