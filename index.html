@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin: 10px 0;
+        }
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: black;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 0;
+            position: absolute;
+            z-index: 1;
+            top: 150%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 1s;
+        }
+
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: transparent transparent black transparent;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+
+    </style>
+</head>
+<body>
+    <h1>Quick Texture</h1>
+    <div class="controls" id="controls-io">
+        <input type="file" class="" id="fileInput" accept="image/*">
+        <button class="tooltip" id="pasteBtn" >📋<span class="tooltiptext">Paste</span></button>
+        <button class="tooltip" id="saveBtn" disabled>💾<span class="tooltiptext">Save</span></button>
+        <button class="tooltip" id="copyBtn" disabled>📝<span class="tooltiptext">Copy</span></button>
+        <button class="tooltip" id="applyBtn" disabled>➕<span class="tooltiptext">Apply</span></button>
+    </div>
+    <div class="controls" id="controls-tools">
+    </div>
+    <div class="controls" id="controls-tool-controls">
+    </div>
+    <canvas id="canvas"></canvas>
+
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
