@@ -19,6 +19,7 @@ const invertTool = new InvertTool();
 const transformTool = new TransformTool();
 const levelsTool = new LevelsTool();
 const noiseTool = new NoiseTool();
+const newBtn = document.getElementById('newBtn');
 const saveBtn = document.getElementById('saveBtn');
 const copyBtn = document.getElementById('copyBtn');
 const applyBtn = document.getElementById('applyBtn');
@@ -64,6 +65,18 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
         };
         reader.readAsDataURL(file);
     }
+});
+
+newBtn.addEventListener('click', async () => {
+    var canvas = document.createElement("canvas");
+
+    canvas.width = 512;
+    canvas.height = 512;
+
+    document.body.appendChild(canvas);
+    newImage(canvas.toDataURL());
+    document.body.removeChild(canvas);
+
 });
 
 document.getElementById('pasteBtn').addEventListener('click', async () => {
