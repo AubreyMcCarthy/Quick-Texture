@@ -28,7 +28,7 @@ export class InvertTool {
         this.gl = gl;
         this.program = ShaderUtils.createShaderProgram(gl, this.vsSource, this.fsSource);
 
-        const controls = document.getElementById('controls-tools');
+        const controls = document.getElementById('controls-toolbar');
     
     
         this.toolBtn = document.createElement('button');
@@ -42,7 +42,7 @@ export class InvertTool {
 
     getControls(processor) {
         this.toolBtn.disabled = true;
-        const controls = document.getElementById('controls-tool-controls');
+        const controls = document.getElementById('controls-tool-specific');
         controls.innerHTML = "";
 
     }

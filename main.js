@@ -3,6 +3,7 @@ import { PreviewTool } from './tools/preview.js';
 import { InvertTool } from './tools/invertTool.js';
 import { TransformTool } from './tools/transformTool.js';
 import { LevelsTool } from './tools/LevelsTool.js';
+import { NoiseTool } from './tools/noiseTool.js';
 
 
 function log(text) {
@@ -11,11 +12,13 @@ function log(text) {
 }
 
 const canvas = document.getElementById('canvas');
-const processor = new ImageProcessor(canvas);
+const bg = document.getElementById('bg');
+const processor = new ImageProcessor(canvas, bg);
 const preview = new PreviewTool();
 const invertTool = new InvertTool();
 const transformTool = new TransformTool();
 const levelsTool = new LevelsTool();
+const noiseTool = new NoiseTool();
 const saveBtn = document.getElementById('saveBtn');
 const copyBtn = document.getElementById('copyBtn');
 const applyBtn = document.getElementById('applyBtn');
@@ -30,6 +33,7 @@ function imageOnLoad(img) {
         processor.initTool(invertTool);
         processor.initTool(transformTool);
         processor.initTool(levelsTool);
+        processor.initTool(noiseTool);
         
         saveBtn.disabled = false;
         copyBtn.disabled = false;

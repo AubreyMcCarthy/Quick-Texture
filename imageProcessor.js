@@ -1,7 +1,8 @@
 
 export class ImageProcessor {
-    constructor(canvas) {
+    constructor(canvas, bg) {
         this.canvas = canvas;
+        this.bg = bg;
         this.gl = canvas.getContext("webgl", { preserveDrawingBuffer: true });
         if (!this.gl) {
             throw new Error("WebGL not available");
@@ -10,7 +11,7 @@ export class ImageProcessor {
         this.initBuffers();
         this.texture = this.gl.createTexture();
         this.currentTool = null;
-        this.controls = document.getElementById('controls-tools');
+        this.controls = document.getElementById('controls-toolbar');
     }
 
     initBuffers() {
@@ -94,5 +95,8 @@ export class ImageProcessor {
         gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
 
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        
+        this.bg.style.backgroundImage = `url(${this.canvas.toDataURL()})`;
+        this.bg.style.backgroundRepeat = 'repeat';
     }
 }

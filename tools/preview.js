@@ -26,7 +26,7 @@ export class PreviewTool {
         this.gl = gl;
         this.program = ShaderUtils.createShaderProgram(gl, this.vsSource, this.fsSource);
 
-        const controls = document.getElementById('controls-tools');
+        const controls = document.getElementById('controls-toolbar');
     
         this.toolBtn = document.createElement('button');
         this.toolBtn.innerHTML = "❌";
@@ -40,7 +40,7 @@ export class PreviewTool {
 
     getControls(processor) {
         this.toolBtn.disabled = true;
-        const controls = document.getElementById('controls-tool-controls');
+        const controls = document.getElementById('controls-tool-specific');
         controls.innerHTML = "";
 
     }

@@ -61,7 +61,7 @@ export class TransformTool {
         this.program = ShaderUtils.createShaderProgram(gl, this.vsSource, this.fsSource);
         this.updateUniforms();
 
-        const controls = document.getElementById('controls-tools');
+        const controls = document.getElementById('controls-toolbar');
 
         this.toolBtn = document.createElement('button');
         this.toolBtn.innerHTML = "Transform";
@@ -76,16 +76,9 @@ export class TransformTool {
         this.toolBtn.disabled = true;
         this.reset();
 
-        const controls = document.getElementById('controls-tool-controls');
+        const controls = document.getElementById('controls-tool-specific');
         controls.innerHTML = "";
 
-        // const btnRotateion = document.createElement('button');
-        // btnRotateion.innerHTML = "Rotate 90";
-        // btnRotateion.addEventListener('click', () => {
-        //         this.rotate90();
-        //         processor.draw();
-        // });
-        // controls.appendChild(btnRotateion);
         const slider = document.createElement('input');
         slider.id = "rotation-slider";
         slider.type = 'range';

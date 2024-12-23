@@ -60,7 +60,7 @@ export class LevelsTool {
         this.program = ShaderUtils.createShaderProgram(gl, this.vsSource, this.fsSource);
         this.updateUniforms();
 
-        const controls = document.getElementById('controls-tools');
+        const controls = document.getElementById('controls-toolbar');
 
         this.toolBtn = document.createElement('button');
         this.toolBtn.innerHTML = "Levels";
@@ -75,7 +75,7 @@ export class LevelsTool {
         this.toolBtn.disabled = true;
         this.reset();
 
-        const controls = document.getElementById('controls-tool-controls');
+        const controls = document.getElementById('controls-tool-specific');
         controls.innerHTML = "";
 
         const blackSlider = document.createElement('input');
