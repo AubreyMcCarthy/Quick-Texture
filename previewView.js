@@ -23,8 +23,13 @@ export class PreviewView {
 
         void main() {
             // Calculate the tiled texture coordinates
-            vec2 tiled_texcoord = fract(v_texcoord * u_tileCount);
-            gl_FragColor = texture2D(u_texture, tiled_texcoord);
+            float aspect = u_resolution.y / u_resolution.x;
+            vec2 tiled_texcoord = v_texcoord;
+            tiled_texcoord.y *= aspect;
+            tiled_texcoord = fract(tiled_texcoord * u_tileCount);
+            vec4 c = texture2D(u_texture, tiled_texcoord);
+            // c.a = 1.0;
+            gl_FragColor = c;
         }`;
         
         // Create background canvas
@@ -170,16 +175,7 @@ export class PreviewView {
     }   
 
     toggleFade() {
-        console.log("fading bg");
         this.bgCanvas.classList.toggle("fade");
         this.fadeableContainer.classList.toggle("fade");
-        if(this.fadeableContainer.classList.contains("fade"))
-        {
-            this.fadeableContainer.style.pointerEvents = "none";
-        }
-        else
-        {
-            this.fadeableContainer.style.pointerEvents = "auto";
-        }
     } 
 }

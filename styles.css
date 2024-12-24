@@ -27,14 +27,16 @@ body {
     -moz-transition: opacity .5s ease-out;
     -webkit-transition: opacity .5s ease-out;
     -o-transition: opacity .5s ease-out;
+    pointer-events: visible;
 }
 
 .fade {
-    opacity: 20%;
+    opacity: 5%;
 }
 
 #fadeable-container.fade {
     opacity: 0%;
+    pointer-events: none;
 }
 
 .shadow {
