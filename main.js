@@ -4,7 +4,7 @@ import { InvertTool } from './tools/invertTool.js';
 import { TransformTool } from './tools/transformTool.js';
 import { LevelsTool } from './tools/LevelsTool.js';
 import { NoiseTool } from './tools/noiseTool.js';
-
+import { GaussianBlurTool } from './tools/gaussianBlurTool.js';
 
 function log(text) {
     console.log(`Error: ${text}`);
@@ -19,6 +19,7 @@ const invertTool = new InvertTool();
 const transformTool = new TransformTool();
 const levelsTool = new LevelsTool();
 const noiseTool = new NoiseTool();
+const gaussianBlurTool = new GaussianBlurTool();
 const newBtn = document.getElementById('newBtn');
 const saveBtn = document.getElementById('saveBtn');
 const copyBtn = document.getElementById('copyBtn');
@@ -35,6 +36,7 @@ function imageOnLoad(img) {
         processor.initTool(transformTool);
         processor.initTool(levelsTool);
         processor.initTool(noiseTool);
+        processor.initTool(gaussianBlurTool);
         
         saveBtn.disabled = false;
         copyBtn.disabled = false;
