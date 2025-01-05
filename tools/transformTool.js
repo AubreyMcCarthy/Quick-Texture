@@ -32,6 +32,11 @@ export class TransformTool {
             value: true,
             defaultValue: true,
         }
+        this.pixelSnap = {
+            lable: "Pixel Snap",
+            value: true,
+            defaultValue: true,
+        }
 
         this.vsSource = `
             attribute vec4 aVertexPosition;
@@ -42,6 +47,7 @@ export class TransformTool {
             uniform float uRotation; // in radians
             uniform vec2 uFlip; // x and y flip
             uniform vec2 uOffset; // x and y offset
+            uniform float uPixelSnap;
             
             void main(void) {
                 gl_Position = aVertexPosition;
@@ -56,7 +62,9 @@ export class TransformTool {
                 texCoord = uFlip * (1.0 - texCoord) + (1.0 - uFlip) * texCoord;
 
                 // clamp to pixel grid
-                // texCoord = floor(texCoord * uTextureSize) / uTextureSize;
+                texCoord = 
+                    uPixelSnap * floor(texCoord * uTextureSize) / uTextureSize +
+                    (1.0-uPixelSnap) * texCoord;
                 
                 // Apply rotation around center (0.5, 0.5)
                 vec2 center = vec2(0.5, 0.5);
@@ -163,6 +171,12 @@ export class TransformTool {
         const controls = document.getElementById('controls-tool-specific');
         controls.innerHTML = "";
 
+        this.addSlider(this.offsetX, controls, processor);
+        this.addSlider(this.offsetY, controls, processor);
+        this.addButton(this.wrapX, controls, processor);
+        this.addButton(this.wrapY, controls, processor);
+        this.addButton(this.pixelSnap, controls, processor);
+
         const slider = document.createElement('input');
         slider.id = "rotation-slider";
         slider.type = 'range';
@@ -197,14 +211,14 @@ export class TransformTool {
         });
         controls.appendChild(btnFlipY);
 
-        this.addSlider(this.offsetX, controls, processor);
-        this.addSlider(this.offsetY, controls, processor);
-        this.addButton(this.wrapX, controls, processor);
-        this.addButton(this.wrapY, controls, processor);
+        
 
     }
 
     getProgramInfo() {
+        const width = this.gl.canvas.width;
+        const height = this.gl.canvas.height;
+
         return {
             program: this.program,
             attribLocations: {
@@ -217,7 +231,11 @@ export class TransformTool {
                 uFlip: this.gl.getUniformLocation(this.program, 'uFlip'),
                 uOffset: this.gl.getUniformLocation(this.program, 'uOffset'),
                 uWrap: this.gl.getUniformLocation(this.program, 'uWrap'),
+                uPixelSnap: this.gl.getUniformLocation(this.program, 'uPixelSnap'),
                 uTextureSize: this.gl.getUniformLocation(this.program, 'uTextureSize'),
+            },
+            uniforms: {
+                uTextureSize: [ width,  height ],
             }
         };
     }
@@ -238,6 +256,7 @@ export class TransformTool {
 
         this.gl.uniform2f(programInfo.uniformLocations.uOffset, -this.offsetX.value, this.offsetY.value);
         this.gl.uniform2f(programInfo.uniformLocations.uWrap, this.wrapX.value, this.wrapY.value);
+        this.gl.uniform1f(programInfo.uniformLocations.uPixelSnap, this.pixelSnap.value);
         // this.gl.uniform2f(programInfo.uniformLocations.uTextureSize, this.processor.canvas.width, this.processor.canvas.height);
     }
 
