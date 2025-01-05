@@ -6,6 +6,8 @@ import { LevelsTool } from './tools/LevelsTool.js';
 import { NoiseTool } from './tools/noiseTool.js';
 import { GaussianBlurTool } from './tools/gaussianBlurTool.js';
 import { SearchGlass } from './searchGlass.js';
+import { PaintTool } from './tools/paintTool.js';
+import { IO } from './IO.js';
 
 function log(text) {
     console.log(`Error: ${text}`);
@@ -16,53 +18,26 @@ const canvas = document.getElementById('canvas');
 const bg = document.getElementById('bg');
 const processor = new ImageProcessor(canvas, bg);
 const preview = new PreviewTool();
+const io = new IO(processor, preview);
 const invertTool = new InvertTool();
 const transformTool = new TransformTool();
 const levelsTool = new LevelsTool();
 const noiseTool = new NoiseTool();
 const gaussianBlurTool = new GaussianBlurTool();
+const paintTool = new PaintTool();
 const newBtn = document.getElementById('newBtn');
 const saveBtn = document.getElementById('saveBtn');
 const copyBtn = document.getElementById('copyBtn');
 const applyBtn = document.getElementById('applyBtn');
 const searchBtn = document.getElementById('searchBtn');
 
-let initalized = false;
-
-function imageOnLoad(img) {
-    processor.loadImage(img);
-
-    if(!initalized) {
-        
-        saveBtn.disabled = false;
-        copyBtn.disabled = false;
-        applyBtn.disabled = false;
-        searchBtn.disabled = false;
-
-        document.getElementById('controls-toolbar').style.visibility = 'visible';
-        
-        initalized = true;
-    }
-
-
-    processor.setTool(preview);
-
-}
-
-function newImage(src) {
-    const img = new Image();
-    img.onload = function() {
-        imageOnLoad(img);
-    };
-    img.src = src;
-}
 
 document.getElementById('fileInput').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            newImage(e.target.result)
+            io.newImage(e.target.result)
         };
         reader.readAsDataURL(file);
     }
@@ -75,7 +50,7 @@ newBtn.addEventListener('click', async () => {
     canvas.height = 512;
 
     document.body.appendChild(canvas);
-    newImage(canvas.toDataURL());
+    io.newImage(canvas.toDataURL());
     document.body.removeChild(canvas);
 
 });
@@ -90,7 +65,7 @@ try {
         else
         {
             const blob = await item.getType("image/png");
-            newImage(URL.createObjectURL(blob));
+            io.newImage(URL.createObjectURL(blob));
         }
     }
 } catch (error) {
@@ -99,9 +74,16 @@ try {
 });
 
 applyBtn.addEventListener('click', async () => {
-    canvas.toBlob(async (blob) => {
-        newImage(URL.createObjectURL(blob));
-    }, 'image/png');
+    if(processor.currentTool) {
+        if(processor.currentTool.apply) {
+            processor.currentTool.apply();
+        }
+        else {
+            canvas.toBlob(async (blob) => {
+                io.newImage(URL.createObjectURL(blob));
+            }, 'image/png');
+        }
+    }
 });
 
 copyBtn.addEventListener('click', async () => {
@@ -142,6 +124,7 @@ let tools = [
     levelsTool.init(processor.gl, processor),
     noiseTool.init(processor.gl, processor),
     gaussianBlurTool.init(processor.gl, processor),
+    paintTool.init(processor.gl, processor, io),
 ];
 
 window.searchGlass = new SearchGlass(tools);

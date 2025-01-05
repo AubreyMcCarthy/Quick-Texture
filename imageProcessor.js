@@ -50,6 +50,9 @@ export class ImageProcessor {
     
 
     setTool(tool) {
+        if(this.currentTool && this.currentTool.close) {
+            this.currentTool.close();
+        }
         const buttons = this.controls.querySelectorAll('button');
         buttons.forEach(button => {
             button.disabled = false;
@@ -113,6 +116,7 @@ export class ImageProcessor {
 
     draw() {
         if (!this.currentTool) return;
+        if(this.currentTool.dontDraw) return;
 
         const gl = this.gl;
         const tool = this.currentTool;
