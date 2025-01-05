@@ -82,6 +82,13 @@ export class NoiseTool {
         });
     
         controls.appendChild(this.toolBtn);
+
+        return {
+            name: 'Noise',
+            aliases: ['Gaussian Noise', 'Perlin Noise', 'Simplex Noise'],
+            description: 'Generate noise pattern',
+            action: () => processor.setTool(this)
+        }
     }
 
     getControls(processor) {

@@ -58,10 +58,6 @@ export class ImageProcessor {
         tool.getControls(this);
         this.draw();
     }
-    
-    initTool(tool) {
-        tool.init(this.gl, this);
-    }
 
     createFramebuffers(width, height) {
         const gl = this.gl;

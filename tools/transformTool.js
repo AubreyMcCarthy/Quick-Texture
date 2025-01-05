@@ -70,6 +70,13 @@ export class TransformTool {
         });
     
         controls.appendChild(this.toolBtn);
+
+        return {
+            name: 'Transform',
+            aliases: ['Translate', 'Offset', 'Rotate'],
+            description: 'Offset and Rotate the image',
+            action: () => processor.setTool(this)
+        }
     }
 
     getControls(processor) {

@@ -5,6 +5,7 @@ import { TransformTool } from './tools/transformTool.js';
 import { LevelsTool } from './tools/LevelsTool.js';
 import { NoiseTool } from './tools/noiseTool.js';
 import { GaussianBlurTool } from './tools/gaussianBlurTool.js';
+import { SearchGlass } from './searchGlass.js';
 
 function log(text) {
     console.log(`Error: ${text}`);
@@ -24,6 +25,7 @@ const newBtn = document.getElementById('newBtn');
 const saveBtn = document.getElementById('saveBtn');
 const copyBtn = document.getElementById('copyBtn');
 const applyBtn = document.getElementById('applyBtn');
+const searchBtn = document.getElementById('searchBtn');
 
 let initalized = false;
 
@@ -31,16 +33,13 @@ function imageOnLoad(img) {
     processor.loadImage(img);
 
     if(!initalized) {
-        processor.initTool(preview);
-        processor.initTool(invertTool);
-        processor.initTool(transformTool);
-        processor.initTool(levelsTool);
-        processor.initTool(noiseTool);
-        processor.initTool(gaussianBlurTool);
         
         saveBtn.disabled = false;
         copyBtn.disabled = false;
         applyBtn.disabled = false;
+        searchBtn.disabled = false;
+
+        document.getElementById('controls-toolbar').style.visibility = 'visible';
         
         initalized = true;
     }
@@ -133,4 +132,20 @@ saveBtn.addEventListener('click', () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+});
+
+
+let tools = [
+    preview.init(processor.gl, processor),
+    invertTool.init(processor.gl, processor),
+    transformTool.init(processor.gl, processor),
+    levelsTool.init(processor.gl, processor),
+    noiseTool.init(processor.gl, processor),
+    gaussianBlurTool.init(processor.gl, processor),
+];
+
+window.searchGlass = new SearchGlass(tools);
+
+searchBtn.addEventListener('click', () => {
+    window.searchGlass.toggle();
 });

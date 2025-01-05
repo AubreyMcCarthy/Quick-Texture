@@ -38,6 +38,13 @@ export class InvertTool {
         });
     
         controls.appendChild(this.toolBtn);
+
+        return {
+            name: 'Invert',
+            aliases: ['Invert', 'Flip'],
+            description: 'Black becomes white, white becomes black, etc',
+            action: () => processor.setTool(this)
+        }
     }
 
     getControls(processor) {

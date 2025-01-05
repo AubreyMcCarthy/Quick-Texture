@@ -102,6 +102,13 @@ export class GaussianBlurTool {
         });
     
         controls.appendChild(this.toolBtn);
+
+        return {
+            name: 'Blur',
+            aliases: ['Gaussian Blur', 'Soften'],
+            description: 'Blur the image',
+            action: () => processor.setTool(this)
+        }
     }
 
     addButton(o, controls, processor) {
