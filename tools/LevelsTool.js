@@ -69,6 +69,13 @@ export class LevelsTool {
         });
     
         controls.appendChild(this.toolBtn);
+
+        return {
+            name: 'Levels',
+            aliases: ['Levels', 'Contrast', 'Sharpen', 'Histogram'],
+            description: 'Chage the contrast of the image',
+            action: () => processor.setTool(this)
+        }
     }
 
     getControls(processor) {

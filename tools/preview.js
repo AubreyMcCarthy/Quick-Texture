@@ -36,6 +36,12 @@ export class PreviewTool {
     
         controls.appendChild(this.toolBtn);
         
+        return {
+            name: 'Preview',
+            aliases: ['Preview', 'None'],
+            description: 'Just see the image',
+            action: () => processor.setTool(this)
+        }
     }
 
     getControls(processor) {
