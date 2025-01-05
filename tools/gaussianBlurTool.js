@@ -4,6 +4,16 @@ export class GaussianBlurTool {
     constructor() {
         this.sigma = 4.0;  // Blur strength
         this.kernelSize = 15;  // Must be odd number
+        this.wrapX = {
+            lable: "Wrap X",
+            value: true,
+            defaultValue: true,
+        }
+        this.wrapY = {
+            lable: "Wrap Y",
+            value: true,
+            defaultValue: true,
+        }
 
         this.vsSource = `
             attribute vec4 aVertexPosition;
@@ -16,13 +26,13 @@ export class GaussianBlurTool {
             }
         `;
 
-        // Horizontal blur shader
         this.fsSourceH = `
             precision highp float;
             varying highp vec2 vTextureCoord;
             uniform sampler2D uSampler;
             uniform float uKernel[${this.kernelSize}];
             uniform float uPixelSize;  // 1/width for horizontal pass
+            uniform vec2 uWrap;
             
             void main(void) {
                 vec4 sum = vec4(0.0);
@@ -31,13 +41,11 @@ export class GaussianBlurTool {
                 for (int i = 0; i < ${this.kernelSize}; i++) {
                     float off = float(i) - offset;
                     vec2 samplePos = vec2(vTextureCoord.x + off * uPixelSize, vTextureCoord.y);
+                    samplePos = uWrap * fract(samplePos) + (vec2(1,1)-uWrap) * clamp(samplePos, 0.0, 1.0);
                     sum += texture2D(uSampler, samplePos) * uKernel[i];
                 }
                 
-                // sum.w = 1.0;
-                // gl_FragColor = sum;
-                // gl_FragColor = vec4(sum.xyz, 1.0);
-                gl_FragColor = texture2D(uSampler, vTextureCoord) - vec4(0.5,0,0,0);
+                gl_FragColor = sum;
             }
         `;
 
@@ -48,6 +56,7 @@ export class GaussianBlurTool {
             uniform sampler2D uSampler;
             uniform float uKernel[${this.kernelSize}];
             uniform float uPixelSize;  // 1/height for vertical pass
+            uniform vec2 uWrap;
             
             void main(void) {
                 vec4 sum = vec4(0.0);
@@ -56,13 +65,11 @@ export class GaussianBlurTool {
                 for (int i = 0; i < ${this.kernelSize}; i++) {
                     float off = float(i) - offset;
                     vec2 samplePos = vec2(vTextureCoord.x, vTextureCoord.y + off * uPixelSize);
+                    samplePos = uWrap * fract(samplePos) + (vec2(1,1)-uWrap) * clamp(samplePos, 0.0, 1.0);
                     sum += texture2D(uSampler, samplePos) * uKernel[i];
                 }
                 
-                // sum.w = 1.0;
-                // gl_FragColor = sum;
-                // gl_FragColor = vec4(sum.xyz, 1.0);
-                gl_FragColor = texture2D(uSampler, vTextureCoord) - vec4(0,0.5,0,0);
+                gl_FragColor = sum;
             }
         `;
 
@@ -72,14 +79,16 @@ export class GaussianBlurTool {
             uniform sampler2D uSampler;
             
             void main(void) {
-                gl_FragColor = texture2D(uSampler, vTextureCoord);
+                vec2 uv = vTextureCoord;
+                gl_FragColor = texture2D(uSampler, uv);
             }
         `;
     }
 
     init(gl, processor) {
         this.gl = gl;
-        this.programH = ShaderUtils.createShaderProgram(gl, this.vsSource, this.fsSourceH);
+        
+        this.programH = ShaderUtils.createShaderProgram(this.gl, this.vsSource, this.fsSourceH);
         this.programV = ShaderUtils.createShaderProgram(gl, this.vsSource, this.fsSourceV);
         this.programF = ShaderUtils.createShaderProgram(gl, this.vsSource, this.fsSourceF);
         this.updateKernel();
@@ -93,6 +102,23 @@ export class GaussianBlurTool {
         });
     
         controls.appendChild(this.toolBtn);
+    }
+
+    addButton(o, controls, processor) {
+        const btn = document.createElement('button');
+        btn.innerHTML = o.lable;
+        if(o.value)
+            btn.classList.add("btn-enabled");
+
+        btn.addEventListener('click', () => {
+            o.value = !o.value;
+            if(o.value)
+                btn.classList.add("btn-enabled");
+            else
+                btn.classList.remove("btn-enabled");
+            processor.draw();
+        });
+        controls.appendChild(btn);
     }
 
     getControls(processor) {
@@ -115,12 +141,13 @@ export class GaussianBlurTool {
                 processor.draw();
         });
         slider.addEventListener("dblclick", (event) => {
-            console.log('reseting rotation');
+            console.log('reseting blur');
             this.sigma = 4.0;
             slider.value = this.sigma;
         });
 
-        
+        this.addButton(this.wrapX, controls, processor);
+        this.addButton(this.wrapY, controls, processor);
 
     }
 
@@ -148,47 +175,77 @@ export class GaussianBlurTool {
     renderPasses() {
         const width = this.gl.canvas.width;
         const height = this.gl.canvas.height;
-
-        return [
-            // Horizontal pass
-            {
-                program: this.programH,
-                attribLocations: {
-                    vertexPosition: this.gl.getAttribLocation(this.programH, 'aVertexPosition'),
-                    textureCoord: this.gl.getAttribLocation(this.programH, 'aTextureCoord'),
-                },
-                uniformLocations: {
-                    uSampler: this.gl.getUniformLocation(this.programH, 'uSampler'),
-                    uKernel: this.gl.getUniformLocation(this.programH, 'uKernel'),
-                    uPixelSize: this.gl.getUniformLocation(this.programH, 'uPixelSize'),
-                },
-                uniforms: {
-                    uKernel: this.kernel,
-                    uPixelSize: 1.0 / width,
+        
+        if(this.sigma == 0) {
+            return [
+                {
+                    program: this.programF,
+                    attribLocations: {
+                        vertexPosition: this.gl.getAttribLocation(this.programF, 'aVertexPosition'),
+                        textureCoord: this.gl.getAttribLocation(this.programF, 'aTextureCoord'),
+                    },
+                    uniformLocations: {
+                        uSampler: this.gl.getUniformLocation(this.programF, 'uSampler'),
+                    }
                 }
-            },
-            // Vertical pass
-            {
-                program: this.programV,
-                attribLocations: {
-                    vertexPosition: this.gl.getAttribLocation(this.programV, 'aVertexPosition'),
-                    textureCoord: this.gl.getAttribLocation(this.programV, 'aTextureCoord'),
+            ];
+        }
+        else {
+            return [
+                // Horizontal pass
+                {
+                    program: this.programH,
+                    attribLocations: {
+                        vertexPosition: this.gl.getAttribLocation(this.programH, 'aVertexPosition'),
+                        textureCoord: this.gl.getAttribLocation(this.programH, 'aTextureCoord'),
+                    },
+                    uniformLocations: {
+                        uSampler: this.gl.getUniformLocation(this.programH, 'uSampler'),
+                        uKernel: this.gl.getUniformLocation(this.programH, 'uKernel'),
+                        uPixelSize: this.gl.getUniformLocation(this.programH, 'uPixelSize'),
+                        uWrap: this.gl.getUniformLocation(this.programH, 'uWrap'),
+                    },
+                    uniforms: {
+                        uKernel: this.kernel,
+                        uPixelSize: 1.0 / width,
+                        uWrap: [ this.wrapX.value, this.wrapY.value ],
+                    }
                 },
-                uniformLocations: {
-                    uSampler: this.gl.getUniformLocation(this.programV, 'uSampler'),
-                    uKernel: this.gl.getUniformLocation(this.programV, 'uKernel'),
-                    uPixelSize: this.gl.getUniformLocation(this.programV, 'uPixelSize'),
+                // Vertical pass
+                {
+                    program: this.programV,
+                    attribLocations: {
+                        vertexPosition: this.gl.getAttribLocation(this.programV, 'aVertexPosition'),
+                        textureCoord: this.gl.getAttribLocation(this.programV, 'aTextureCoord'),
+                    },
+                    uniformLocations: {
+                        uSampler: this.gl.getUniformLocation(this.programV, 'uSampler'),
+                        uKernel: this.gl.getUniformLocation(this.programV, 'uKernel'),
+                        uPixelSize: this.gl.getUniformLocation(this.programV, 'uPixelSize'),
+                        uWrap: this.gl.getUniformLocation(this.programV, 'uWrap'),
+                    },
+                    uniforms: {
+                        uKernel: this.kernel,
+                        uPixelSize: 1.0 / height,
+                        uWrap: [ this.wrapX.value, this.wrapY.value ],
+                    }
                 },
-                uniforms: {
-                    uKernel: this.kernel,
-                    uPixelSize: 1.0 / height,
+                {
+                    program: this.programF,
+                    attribLocations: {
+                        vertexPosition: this.gl.getAttribLocation(this.programF, 'aVertexPosition'),
+                        textureCoord: this.gl.getAttribLocation(this.programF, 'aTextureCoord'),
+                    },
+                    uniformLocations: {
+                        uSampler: this.gl.getUniformLocation(this.programF, 'uSampler'),
+                    }
                 }
-            }
-        ];
+            ];
+        }
     }
 
     getProgramInfo() {
-        return {
+        return { // I don't think this is needed
             program: this.programF,
             attribLocations: {
                 vertexPosition: this.gl.getAttribLocation(this.programF, 'aVertexPosition'),

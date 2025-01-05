@@ -180,7 +180,14 @@ export class ImageProcessor {
                     if (Array.isArray(value)) {
                         const setter = `uniform${value.length}fv`;
                         gl[setter](programInfo.uniformLocations[name], value);
-                    } else {
+                    }
+                    else if(ArrayBuffer.isView(value)) {
+                        // const setter = `uniform${value.length}fv`;
+                        // only supports float arrays currently
+                        const setter = `uniform1fv`;
+                        gl[setter](programInfo.uniformLocations[name], value);
+                    } 
+                    else {
                         gl.uniform1f(programInfo.uniformLocations[name], value);
                     }
                 }
