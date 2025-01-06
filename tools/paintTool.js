@@ -105,14 +105,14 @@ export class PaintTool {
         const ctx = this.ctx;
         var start = function (e) {
             ctx.beginPath();
-            const x = e.changedTouches[0].offsetX;
-            const y = e.changedTouches[0].offsetY;
+            const x = e.changedTouches[0].pageX - e.touches[0].target.offsetLeft;     
+            const y = e.changedTouches[0].pageY - e.touches[0].target.offsetTop;
             ctx.moveTo(x, y);
         };
         var move = function (e) {
             e.preventDefault();
-            const x = e.changedTouches[0].offsetX;
-            const y = e.changedTouches[0].offsetY;
+            const x = e.changedTouches[0].pageX - e.touches[0].target.offsetLeft;     
+            const y = e.changedTouches[0].pageY - e.touches[0].target.offsetTop;
             ctx.lineTo(x, y);
             ctx.stroke();
         };
