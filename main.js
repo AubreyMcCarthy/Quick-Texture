@@ -28,6 +28,7 @@ const paintTool = new PaintTool();
 const newBtn = document.getElementById('newBtn');
 const saveBtn = document.getElementById('saveBtn');
 const copyBtn = document.getElementById('copyBtn');
+const shareBtn = document.getElementById('shareBtn');
 const applyBtn = document.getElementById('applyBtn');
 const searchBtn = document.getElementById('searchBtn');
 
@@ -36,7 +37,7 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             io.newImage(e.target.result)
         };
         reader.readAsDataURL(file);
@@ -47,10 +48,10 @@ newBtn.addEventListener('click', newCanvas);
 
 async function newCanvas() {
     var canvas = document.createElement("canvas");
-    
+
     canvas.width = 512;
     canvas.height = 512;
-    
+
     document.body.appendChild(canvas);
     io.newImage(canvas.toDataURL());
     document.body.removeChild(canvas);
@@ -58,26 +59,25 @@ async function newCanvas() {
 }
 
 document.getElementById('pasteBtn').addEventListener('click', async () => {
-try {
-    const clipboardContents = await navigator.clipboard.read();
-    for (const item of clipboardContents) {
-        if (!item.types.includes("image/png")) {
-            throw new Error("Clipboard does not contain PNG image data.");
+    try {
+        const clipboardContents = await navigator.clipboard.read();
+        for (const item of clipboardContents) {
+            if (!item.types.includes("image/png")) {
+                throw new Error("Clipboard does not contain PNG image data.");
+            }
+            else {
+                const blob = await item.getType("image/png");
+                io.newImage(URL.createObjectURL(blob));
+            }
         }
-        else
-        {
-            const blob = await item.getType("image/png");
-            io.newImage(URL.createObjectURL(blob));
-        }
+    } catch (error) {
+        log(error.message);
     }
-} catch (error) {
-    log(error.message);
-}
 });
 
 applyBtn.addEventListener('click', async () => {
-    if(processor.currentTool) {
-        if(processor.currentTool.apply) {
+    if (processor.currentTool) {
+        if (processor.currentTool.apply) {
             processor.currentTool.apply();
         }
         else {
@@ -116,6 +116,27 @@ saveBtn.addEventListener('click', () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+});
+
+shareBtn.addEventListener('click', async () => {
+    if (!navigator.canShare) {
+        alert(`Your browser doesn't support the Web Share API.`);
+        return;
+    }
+
+    canvas.toBlob(async (blob) => {
+        try {
+            const filesArray = [new File([blob], 'QuickTexture.png', { type: "image/png", lastModified: new Date().getTime() })];
+            const shareData = {
+                files: filesArray,
+            };
+            navigator.share(shareData).then(() => {
+                console.log('Shared successfully');
+            })
+        } catch (error) {
+            alert(`Error: ${error.message}`);
+        }
+    }, 'image/png');
 });
 
 
