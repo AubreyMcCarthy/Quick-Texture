@@ -231,7 +231,9 @@ export class TransformTool {
     }
 
     close() {
-        canvas.removeEventListener('mousedown', this.mouseDown);
+        this.canvas.removeEventListener('mousedown', this.mouseDown);
+        this.canvas.removeEventListener("touchstart", this.startTouch, false);
+        this.canvas.removeEventListener("touchmove", this.moveTouch, false);
     }
 
     getProgramInfo() {
@@ -323,18 +325,19 @@ export class TransformTool {
         const tool = this;
         tool.startX = 0;
         tool.startY = 0;
-        const mouseMove = function(e) {
-            const deltaX = tool.startX - e.clientX;
-            const deltaY = tool.startY - e.clientY;
-        
-            tool.startX = e.clientX;
-            tool.startY = e.clientY;
+
+        const move = function(x, y) {
+            const deltaX = tool.startX - x;
+            const deltaY = tool.startY - y;
+
+            tool.startX = x;
+            tool.startY = y;
     
             let newX = tool.offsetX.value - (deltaX / canvas.width);
             newX = validateOffset(newX, tool.offsetX.min, tool.offsetY.max);
             tool.offsetX.value = newX;
             tool.offsetX.slider.value = newX;
-
+    
             let newY = tool.offsetY.value + (deltaY / canvas.height);
             newY = validateOffset(newY, tool.offsetY.min, tool.offsetY.max);
             tool.offsetY.value = newY;
@@ -342,6 +345,10 @@ export class TransformTool {
     
             tool.updateUniforms();
             tool.processor.draw();
+
+        }
+        const mouseMove = function(e) {
+            move(e.clientX, e.clientY);
         }
         this.mouseMove = mouseMove;
 
@@ -360,5 +367,35 @@ export class TransformTool {
         
         document.addEventListener('mouseup', mouseUp);
         canvas.addEventListener('mousedown', mouseDown);
+
+        var moveTouch = function (e) {
+            e.preventDefault();
+        };
+        this.moveTouch = moveTouch;
+        var startTouch = function (e) {
+            move(e.changedTouches[0].pageX, e.changedTouches[0].pageY);
+        };
+        this.startTouch = startTouch;
+        this.canvas.addEventListener("touchstart", startTouch, false);
+        this.canvas.addEventListener("touchmove", moveTouch, false);
     };
+
+    // moveTouchSetup() {
+    //     const ctx = this.ctx;
+    //     var start = function (e) {
+    //         ctx.beginPath();
+    //         const x = e.changedTouches[0].pageX - e.touches[0].target.offsetLeft;
+    //         const y = e.changedTouches[0].pageY - e.touches[0].target.offsetTop;
+    //         ctx.moveTo(x, y);
+    //     };
+    //     var move = function (e) {
+    //         e.preventDefault();
+    //         const x = e.changedTouches[0].pageX - e.touches[0].target.offsetLeft;
+    //         const y = e.changedTouches[0].pageY - e.touches[0].target.offsetTop;
+    //         ctx.lineTo(x, y);
+    //         ctx.stroke();
+    //     };
+    //     this.canvas.addEventListener("touchstart", start, false);
+    //     this.canvas.addEventListener("touchmove", move, false);
+    // };
 }
