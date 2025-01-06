@@ -43,17 +43,19 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
     }
 });
 
-newBtn.addEventListener('click', async () => {
-    var canvas = document.createElement("canvas");
+newBtn.addEventListener('click', newCanvas);
 
+async function newCanvas() {
+    var canvas = document.createElement("canvas");
+    
     canvas.width = 512;
     canvas.height = 512;
-
+    
     document.body.appendChild(canvas);
     io.newImage(canvas.toDataURL());
     document.body.removeChild(canvas);
 
-});
+}
 
 document.getElementById('pasteBtn').addEventListener('click', async () => {
 try {
@@ -132,3 +134,6 @@ window.searchGlass = new SearchGlass(tools);
 searchBtn.addEventListener('click', () => {
     window.searchGlass.toggle();
 });
+
+
+newCanvas();
