@@ -178,6 +178,11 @@ button:disabled {
   opacity: 0;
   transition: transform 0.2s ease, opacity 0.2s ease;
   scrollbar-color: grey black;
+  color: white;
+}
+
+input {
+  color: white;
 }
 
 .spotlight-overlay.open .spotlight-container {

@@ -12,7 +12,7 @@ export class PaintTool {
 
 
         this.toolBtn = document.createElement('button');
-        this.toolBtn.innerHTML = "paint";
+        this.toolBtn.innerHTML = "Draw";
         this.toolBtn.addEventListener('click', () => {
             processor.setTool(this);
         });
@@ -20,9 +20,9 @@ export class PaintTool {
         controls.appendChild(this.toolBtn);
 
         return {
-            name: 'paint',
-            aliases: ['Invert', 'Flip'],
-            description: 'Black becomes white, white becomes black, etc',
+            name: 'Draw',
+            aliases: ['Paint', 'Brush','Pen', 'Pencil', 'Sketch'],
+            description: 'Sketch on the canvas',
             action: () => processor.setTool(this)
         }
     }
