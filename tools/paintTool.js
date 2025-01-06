@@ -3,6 +3,54 @@ export class PaintTool {
         this.color = '#990099';
         this.buttons = [];
 
+        this.blendModes = [
+            {
+                label: "Normal",
+                value: "source-over",
+            },
+            {
+                label: "Add",
+                value: "lighter",
+            },
+            {
+                label: "Max",
+                value: "lighten",
+            },
+            {
+                label: "Multiply",
+                value: "multiply",
+            },
+            {
+                label: "Screen",
+                value: "screen",
+            },
+            {
+                label: "Overlay",
+                value: "overlay",
+            },
+            {
+                label: "Darken",
+                value: "darken",
+            },
+            {
+                label: "Hue",
+                value: "hue",  
+            },
+            {
+                label: "Saturation",
+                value: "saturation",
+            },
+            {
+                label: "Color",
+                value: "color",
+            },
+            {
+                label: "Luminosity",
+                value: "luminosity",
+            },
+        ]
+        this.blendMode = this.blendModes[0].value;
+
         this.colors = [
             {
                 lable: "Black",
@@ -24,7 +72,33 @@ export class PaintTool {
                 lable: "Blue",
                 color: '#0000ff',
             },
+            {
+                lable: "Steel Pink",
+                color: '#C23AA9',
+            },
+            {
+                lable: "Coral",
+                color: '#FB8F67',
+            },
+            
+            {
+                lable: "Naples Yellow",
+                color: '#F8E16C',
+            },
+            {
+                lable: "Mint",
+                color: '#00C49A',
+            },
+            {
+                lable: "Blue Green",
+                color: '#00A0C0',
+            },
+            {
+                lable: "Black Grey",
+                color: '#303B2B',
+            },
         ]
+        this.color = this.colors[0].color;
         this.eraser = {
             lable: "Erase",
             color: '#999',
@@ -65,6 +139,7 @@ export class PaintTool {
     addColorButton(o, controls) {
         const btn = this.addSelectButton("", o.color, controls);
         btn.addEventListener('click', () => {
+            this.color = o.color;
             this.selectColor(o.color);
         });
         o.btn = btn;
@@ -79,6 +154,22 @@ export class PaintTool {
         this.buttons.push(o);
     }
 
+    addSelect(o, controls) {
+        const select = document.createElement('select');
+        select.id = "blend-mode-select";
+        controls.appendChild(select);
+
+        //Create and append the options
+        for (var i = 0; i < o.length; i++) {
+            var option = document.createElement("option");
+            option.value = o[i].value;
+            option.text = o[i].label;
+            select.appendChild(option);
+        }
+        select.value = this.blendMode;
+        return select;
+    }
+
     getControls(processor) {
         this.toolBtn.disabled = true;
         const controls = document.getElementById('controls-tool-specific');
@@ -89,11 +180,18 @@ export class PaintTool {
             this.addColorButton(this.colors[i], controls);
         }
         this.addEraserButton(this.eraser, controls)
+        const fillBtn = this.addSelectButton("Fill Canvas", '#000', controls);
+        fillBtn.addEventListener('click', () => this.fillColor());
+
+        const blendSelect = this.addSelect(this.blendModes, controls);
+        blendSelect.addEventListener("change", (event) => {
+            this.blendMode = event.target.value;
+            this.ctx.globalCompositeOperation = this.blendMode;
+        });
 
         const hr = document.createElement('hr');
         controls.appendChild(hr);
-        this.currentColor = this.addSelectButton("", this.color[0].color, controls);
-        console.log(this.currentColor);
+        this.currentColor = this.addSelectButton("", this.color, controls);
 
         this.newCanvas();
     }
@@ -134,7 +232,6 @@ export class PaintTool {
         this.drawPointer();
         this.drawMouse();
 
-        this.selectColor(this.colors[0].color);
     }
 
     close() {
@@ -153,11 +250,10 @@ export class PaintTool {
 
     }
 
-    selectColor(c) {
-        this.color = c;
+    selectColor() {
         if (this.currentColor)
             this.currentColor.style.backgroundColor = this.color;
-        this.ctx.globalCompositeOperation = "source-over";
+        this.ctx.globalCompositeOperation = this.blendMode;
         this.ctx.beginPath();
         this.ctx.strokeStyle = this.color;
     }
@@ -167,6 +263,13 @@ export class PaintTool {
         this.ctx.globalCompositeOperation = 'destination-out';
         this.ctx.beginPath();
         this.ctx.strokeStyle = this.color;
+    }
+
+    fillColor() {
+        this.ctx.beginPath(); 
+        this.ctx.fillStyle = this.color;
+        this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fill(); 
     }
 
 
