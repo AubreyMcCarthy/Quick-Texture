@@ -121,9 +121,9 @@ saveBtn.addEventListener('click', () => {
 
 let tools = [
     preview.init(processor.gl, processor),
-    invertTool.init(processor.gl, processor),
     transformTool.init(processor.gl, processor),
     levelsTool.init(processor.gl, processor),
+    invertTool.init(processor.gl, processor),
     noiseTool.init(processor.gl, processor),
     gaussianBlurTool.init(processor.gl, processor),
     paintTool.init(processor.gl, processor, io),
