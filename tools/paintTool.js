@@ -1,7 +1,34 @@
 export class PaintTool {
     constructor() {
         this.color = '#990099';
+        this.buttons = [];
 
+        this.colors = [
+            {
+                lable: "Black",
+                color: '#000',
+            },
+            {
+                lable: "White",
+                color: '#fff',
+            },
+            {
+                lable: "Red",
+                color: '#ff0000',
+            },
+            {
+                lable: "Green",
+                color: '#00ff00',
+            },
+            {
+                lable: "Blue",
+                color: '#0000ff',
+            },
+        ]
+        this.eraser = {
+            lable: "Erase",
+            color: '#999',
+        }
     }
 
     init(gl, processor, io) {
@@ -21,16 +48,53 @@ export class PaintTool {
 
         return {
             name: 'Draw',
-            aliases: ['Paint', 'Brush','Pen', 'Pencil', 'Sketch'],
+            aliases: ['Paint', 'Brush', 'Pen', 'Pencil', 'Sketch'],
             description: 'Sketch on the canvas',
             action: () => processor.setTool(this)
         }
+    }
+
+    addSelectButton(label, color, controls) {
+        const btn = document.createElement('button');
+        btn.innerHTML = label;
+        btn.style.backgroundColor = color;
+        controls.appendChild(btn);
+        return btn;
+    }
+
+    addColorButton(o, controls) {
+        const btn = this.addSelectButton("", o.color, controls);
+        btn.addEventListener('click', () => {
+            this.selectColor(o.color);
+        });
+        o.btn = btn;
+        this.buttons.push(o);
+    }
+    addEraserButton(o, controls) {
+        const btn = this.addSelectButton('🧽', o.color, controls);
+        btn.addEventListener('click', () => {
+            this.selectEraser(o.color);
+        });
+        o.btn = btn;
+        this.buttons.push(o);
     }
 
     getControls(processor) {
         this.toolBtn.disabled = true;
         const controls = document.getElementById('controls-tool-specific');
         controls.innerHTML = "";
+
+
+        for (let i = 0; i < this.colors.length; i++) {
+            this.addColorButton(this.colors[i], controls);
+        }
+        this.addEraserButton(this.eraser, controls)
+
+        const hr = document.createElement('hr');
+        controls.appendChild(hr);
+        this.currentColor = this.addSelectButton("", this.color[0].color, controls);
+        console.log(this.currentColor);
+
         this.newCanvas();
     }
 
@@ -58,7 +122,7 @@ export class PaintTool {
         // copy base contents
         baseCanvas.toBlob(async (blob) => {
             const img = new Image();
-            img.onload = function() {
+            img.onload = function () {
                 ctx.drawImage(img, 0, 0);
             };
             img.src = URL.createObjectURL(blob);
@@ -69,6 +133,8 @@ export class PaintTool {
         this.drawTouch();
         this.drawPointer();
         this.drawMouse();
+
+        this.selectColor(this.colors[0].color);
     }
 
     close() {
@@ -84,20 +150,24 @@ export class PaintTool {
             this.io.newImage(URL.createObjectURL(blob));
             this.close();
         }, 'image/png');
-        
+
     }
 
-    // selectColor(el){
-    //     for(var i=0;i<document.getElementsByClassName("palette").length;i++){
-    //         document.getElementsByClassName("palette")[i].style.borderColor = "#777";
-    //         document.getElementsByClassName("palette")[i].style.borderStyle = "solid";
-    //     }
-    //     el.style.borderColor = "#fff";
-    //     el.style.borderStyle = "dashed";
-    //     color = window.getComputedStyle(el).backgroundColor;
-    //     ctx.beginPath();
-    //     ctx.strokeStyle = color;
-    // }
+    selectColor(c) {
+        this.color = c;
+        if (this.currentColor)
+            this.currentColor.style.backgroundColor = this.color;
+        this.ctx.globalCompositeOperation = "source-over";
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = this.color;
+    }
+
+    selectEraser(c) {
+        this.color = c;
+        this.ctx.globalCompositeOperation = 'destination-out';
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = this.color;
+    }
 
 
     // prototype to	start drawing on touch using canvas moveTo and lineTo
@@ -105,13 +175,13 @@ export class PaintTool {
         const ctx = this.ctx;
         var start = function (e) {
             ctx.beginPath();
-            const x = e.changedTouches[0].pageX - e.touches[0].target.offsetLeft;     
+            const x = e.changedTouches[0].pageX - e.touches[0].target.offsetLeft;
             const y = e.changedTouches[0].pageY - e.touches[0].target.offsetTop;
             ctx.moveTo(x, y);
         };
         var move = function (e) {
             e.preventDefault();
-            const x = e.changedTouches[0].pageX - e.touches[0].target.offsetLeft;     
+            const x = e.changedTouches[0].pageX - e.touches[0].target.offsetLeft;
             const y = e.changedTouches[0].pageY - e.touches[0].target.offsetTop;
             ctx.lineTo(x, y);
             ctx.stroke();

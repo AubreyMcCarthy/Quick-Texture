@@ -80,6 +80,9 @@ input[type="file"] {
 }
 
 button, .custom-file-upload {
+  box-sizing: border-box;
+  height: 36px;
+  min-width: 36px;
   padding: 8px 16px;
   background: #0066cc;
   color: white;
