@@ -25,6 +25,7 @@ export class PreviewView {
             // Calculate the tiled texture coordinates
             float aspect = u_resolution.y / u_resolution.x;
             vec2 tiled_texcoord = v_texcoord;
+            tiled_texcoord.y = 1.0 - tiled_texcoord.y;
             tiled_texcoord.y *= aspect;
             tiled_texcoord = fract(tiled_texcoord * u_tileCount);
             vec4 c = texture2D(u_texture, tiled_texcoord);

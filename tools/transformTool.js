@@ -1,7 +1,17 @@
 import { ShaderUtils } from '../shaderUtils.js';
 
-// TODO: whole pixel snapping
 // TODO: filtering options
+
+function validateOffset(value, min, max) {
+    if (value >= min && value < max) {
+        return value;
+    }
+
+    const range = max - min;
+    value -= min;
+    const wrapped = value - Math.floor(value / range) * range;
+    return wrapped + min;
+}
 
 export class TransformTool {
     constructor() {
@@ -144,6 +154,7 @@ export class TransformTool {
             this.updateUniforms();
             processor.draw();
         });
+        o.slider = slider;
     }
 
     addButton(o, controls, processor) {
@@ -166,6 +177,7 @@ export class TransformTool {
 
     getControls(processor) {
         this.toolBtn.disabled = true;
+        this.processor = processor;
         this.reset();
 
         const controls = document.getElementById('controls-tool-specific');
@@ -211,8 +223,15 @@ export class TransformTool {
         });
         controls.appendChild(btnFlipY);
 
+        this.canvas = this.gl.canvas;
+        console.log(this.canvas);
+        this.moveSetup();
         
 
+    }
+
+    close() {
+        canvas.removeEventListener('mousedown', this.mouseDown);
     }
 
     getProgramInfo() {
@@ -262,11 +281,14 @@ export class TransformTool {
 
     reset() {
         this.rotation = 0;
-        // this.offsetX.reset();
-        // this.offsetY.reset();
-        // this.wrapX.reset();
-        // this.wrapY.reset();
-        // this.updateUniforms();
+        this.offsetX.value = this.offsetX.defaultValue;
+        this.offsetY.value = this.offsetX.defaultValue;
+        this.wrapX.value = this.wrapX.defaultValue;
+        this.wrapY.value = this.wrapY.defaultValue;
+        this.pixelSnap.value = this.pixelSnap.defaultValue; 
+        this.flipX = false;
+        this.flipY = false;
+        this.updateUniforms();
     }
 
     // Control methods
@@ -295,4 +317,48 @@ export class TransformTool {
         this.flipY = !this.flipY;
         this.updateUniforms();
     }
+
+    moveSetup() {
+        const canvas = this.canvas;
+        const tool = this;
+        tool.startX = 0;
+        tool.startY = 0;
+        const mouseMove = function(e) {
+            const deltaX = tool.startX - e.clientX;
+            const deltaY = tool.startY - e.clientY;
+        
+            tool.startX = e.clientX;
+            tool.startY = e.clientY;
+    
+            let newX = tool.offsetX.value - (deltaX / canvas.width);
+            newX = validateOffset(newX, tool.offsetX.min, tool.offsetY.max);
+            tool.offsetX.value = newX;
+            tool.offsetX.slider.value = newX;
+
+            let newY = tool.offsetY.value + (deltaY / canvas.height);
+            newY = validateOffset(newY, tool.offsetY.min, tool.offsetY.max);
+            tool.offsetY.value = newY;
+            tool.offsetY.slider.value = newY;
+    
+            tool.updateUniforms();
+            tool.processor.draw();
+        }
+        this.mouseMove = mouseMove;
+
+        const mouseDown = function(e) {
+            tool.startX = e.clientX;
+            tool.startY = e.clientY;
+            console.log(tool.startX);
+            canvas.addEventListener('mousemove', mouseMove);
+        };
+        this.mouseDown = mouseDown;
+        
+        const mouseUp = function(e) {
+            canvas.removeEventListener('mousemove', mouseMove);
+        };
+        this.mouseUp = mouseUp;
+        
+        document.addEventListener('mouseup', mouseUp);
+        canvas.addEventListener('mousedown', mouseDown);
+    };
 }
