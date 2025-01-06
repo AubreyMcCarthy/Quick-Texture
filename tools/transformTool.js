@@ -370,14 +370,16 @@ export class TransformTool {
 
         var moveTouch = function (e) {
             e.preventDefault();
+            move(e.changedTouches[0].pageX, e.changedTouches[0].pageY);
         };
         this.moveTouch = moveTouch;
         var startTouch = function (e) {
-            move(e.changedTouches[0].pageX, e.changedTouches[0].pageY);
+            tool.startX = e.changedTouches[0].pageX;
+            tool.startY = e.changedTouches[0].pageY;
         };
         this.startTouch = startTouch;
-        this.canvas.addEventListener("touchstart", startTouch, false);
-        this.canvas.addEventListener("touchmove", moveTouch, false);
+        canvas.addEventListener("touchstart", startTouch, false);
+        canvas.addEventListener("touchmove", moveTouch, false);
     };
 
     // moveTouchSetup() {
