@@ -67,7 +67,7 @@ export class PaintTool {
 
         // setup to trigger drawing on mouse or touch
         this.drawTouch();
-        // this.drawPointer();
+        this.drawPointer();
         this.drawMouse();
     }
 
