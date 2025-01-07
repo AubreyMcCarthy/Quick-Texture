@@ -126,7 +126,7 @@ shareBtn.addEventListener('click', async () => {
 
     canvas.toBlob(async (blob) => {
         try {
-            const filesArray = [new File([blob], 'QuickTexture.png', { type: "image/png", lastModified: new Date().getTime() })];
+            const filesArray = [new File([blob], 'QuickTexture.png', { type: blob.type, lastModified: new Date().getTime() })];
             const shareData = {
                 files: filesArray,
             };
@@ -141,13 +141,13 @@ shareBtn.addEventListener('click', async () => {
 
 
 let tools = [
-    preview.init(processor.gl, processor),
     transformTool.init(processor.gl, processor),
     levelsTool.init(processor.gl, processor),
     invertTool.init(processor.gl, processor),
     noiseTool.init(processor.gl, processor),
     gaussianBlurTool.init(processor.gl, processor),
     paintTool.init(processor.gl, processor, io),
+    preview.init(processor.gl, processor),
 ];
 
 window.searchGlass = new SearchGlass(tools);

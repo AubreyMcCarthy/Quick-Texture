@@ -30,6 +30,7 @@ export class PreviewTool {
     
         this.toolBtn = document.createElement('button');
         this.toolBtn.innerHTML = "❌";
+        this.toolBtn.id = 'preview-btn';
         this.toolBtn.addEventListener('click', () => { 
             processor.setTool(this);
         });
