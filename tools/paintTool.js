@@ -3,6 +3,36 @@ export class PaintTool {
         this.color = '#990099';
         this.buttons = [];
 
+        this.lineWidth = 5;
+        
+        this.eraser = {
+            label: "🧽",
+            value: false,
+            defaultValue: false,
+            color: "#000"
+        }
+        this.polyFill = {
+            label: "▨",
+            value: false,
+            defaultValue: false,
+        }
+
+        // this.penModes = [
+        //     {
+        //         label: "Draw",
+        //         value: "draw",
+        //     },
+        //     {
+        //         label: "Erase",
+        //         value: "erase",
+        //     },
+        //     {
+        //         label: "Poly Fill",
+        //         value: "poly-fill",
+        //     },
+        // ];
+        // this.penMode = this.penModes[0].value;
+
         this.blendModes = [
             {
                 label: "Normal",
@@ -34,7 +64,7 @@ export class PaintTool {
             },
             {
                 label: "Hue",
-                value: "hue",  
+                value: "hue",
             },
             {
                 label: "Saturation",
@@ -106,10 +136,6 @@ export class PaintTool {
             },
         ]
         this.color = this.colors[0].color;
-        this.eraser = {
-            lable: "Erase",
-            color: '#999',
-        }
     }
 
     init(gl, processor, io) {
@@ -135,35 +161,49 @@ export class PaintTool {
         }
     }
 
-    addSelectButton(label, color, controls) {
+    addSelectButton(label, controls) {
         const btn = document.createElement('button');
         btn.innerHTML = label;
-        btn.style.backgroundColor = color;
         controls.appendChild(btn);
         return btn;
     }
+    
+    setButtonColor(btn, color) {
+        btn.style.backgroundColor = color;
+    }
 
     addColorButton(o, controls) {
-        const btn = this.addSelectButton("", o.color, controls);
+        const btn = this.addSelectButton("", controls);
+        this.setButtonColor(btn, o.color);
         btn.addEventListener('click', () => {
             this.color = o.color;
+            this.eraser.value = false;
+            this.eraser.btn.classList.remove("btn-enabled");
             this.selectColor(o.color);
         });
         o.btn = btn;
         this.buttons.push(o);
     }
-    addEraserButton(o, controls) {
-        const btn = this.addSelectButton('🧽', o.color, controls);
+    addToolButton(o, controls) {
+        const btn = this.addSelectButton(o.label, controls);
+
+        if(o.value)
+            btn.classList.add("btn-enabled");
+
         btn.addEventListener('click', () => {
-            this.selectEraser(o.color);
+            o.value = !o.value;
+            if(o.value)
+                btn.classList.add("btn-enabled");
+            else
+                btn.classList.remove("btn-enabled");
+
+            this.selectColor();
         });
         o.btn = btn;
-        this.buttons.push(o);
     }
 
     addSelect(o, controls) {
         const select = document.createElement('select');
-        select.id = "blend-mode-select";
         controls.appendChild(select);
 
         //Create and append the options
@@ -173,7 +213,6 @@ export class PaintTool {
             option.text = o[i].label;
             select.appendChild(option);
         }
-        select.value = this.blendMode;
         return select;
     }
 
@@ -186,8 +225,9 @@ export class PaintTool {
         for (let i = 0; i < this.colors.length; i++) {
             this.addColorButton(this.colors[i], controls);
         }
-        this.addEraserButton(this.eraser, controls)
-        const fillBtn = this.addSelectButton("Fill Canvas", '#000', controls);
+        this.addToolButton(this.eraser, controls);
+        this.addToolButton(this.polyFill, controls);
+        const fillBtn = this.addSelectButton("🪣", controls);
         fillBtn.addEventListener('click', () => this.fillColor());
 
         const blendSelect = this.addSelect(this.blendModes, controls);
@@ -195,22 +235,33 @@ export class PaintTool {
             this.blendMode = event.target.value;
             this.ctx.globalCompositeOperation = this.blendMode;
         });
+        blendSelect.id = "blend-mode-select";
+        blendSelect.value = this.blendMode;
+
+        // const modeSelect = this.addSelect(this.penModes, controls);
+        // modeSelect.addEventListener("change", (event) => {
+        //     this.penMode = event.target.value;
+        //     this.selectColor();
+        // });
+        // modeSelect.id = "pen-mode-select";
+        // modeSelect.value = this.penMode;
 
         const hr = document.createElement('hr');
         controls.appendChild(hr);
-        this.currentColor = this.addSelectButton("", this.color, controls);
+        this.currentColor = this.addSelectButton("", controls);
+        this.setButtonColor(this.currentColor, this.color);
 
         this.newCanvas();
 
         // Add undo/redo buttons
         const undoButton = document.createElement('button');
-        undoButton.textContent = 'Undo';
+        undoButton.innerHTML = '&ShortLeftArrow;';
         undoButton.addEventListener('click', () => this.undo());
         // undoButton.onclick = () => this.undo;
         controls.appendChild(undoButton);
 
         const redoButton = document.createElement('button');
-        redoButton.textContent = 'Redo';
+        redoButton.innerHTML = '&rightarrow;';
         redoButton.addEventListener('click', () => this.redo());
         // redoButton.onclick = () => this.redo;
         controls.appendChild(redoButton);
@@ -256,7 +307,7 @@ export class PaintTool {
 
         [this.ctx, this.historyCtx].forEach(ctx => {
             ctx.strokeStyle = this.color;
-            ctx.lineWidth = 5;
+            ctx.lineWidth = this.lineWidth;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
         });
@@ -295,20 +346,41 @@ export class PaintTool {
     }
 
     selectColor() {
-        if (this.currentColor)
-            this.currentColor.style.backgroundColor = this.color;
-        this.ctx.globalCompositeOperation = this.blendMode;
-        // this.ctx.lineWidth = 1;
-        this.ctx.beginPath();
-        this.ctx.strokeStyle = this.color;
-        // this.ctx.fillStyle = this.color;
-    }
 
-    selectEraser(c) {
-        this.color = c;
-        this.ctx.globalCompositeOperation = 'destination-out';
-        this.ctx.beginPath();
+        if (this.currentColor)
+        {
+            if(this.eraser.value)
+            {
+                this.currentColor.style.backgroundColor = this.eraser.color;
+                this.currentColor.innerHTML = this.eraser.label;
+            }
+            else
+            {
+                this.currentColor.style.backgroundColor = this.color;
+                this.currentColor.innerHTML = "";
+            }
+        }
+        if(this.eraser.value)
+        {
+            this.ctx.globalCompositeOperation = 'destination-out';
+        }
+        else
+        {
+            this.ctx.globalCompositeOperation = this.blendMode;
+        }
+
+        if(this.polyFill.value)
+        {
+            this.ctx.lineWidth = 1;
+        }
+        else
+        {
+            this.ctx.lineWidth = this.lineWidth;
+        }
+        
+        this.ctx.fillStyle = this.color;
         this.ctx.strokeStyle = this.color;
+        this.ctx.beginPath();
     }
 
     fillColor() {
@@ -367,6 +439,9 @@ export class PaintTool {
     stopDrawing() {
         if (!this.state.isDrawing) return;
 
+        if(this.polyFill.value)
+            this.ctx.fill();
+
         this.state.isDrawing = false;
         if (this.state.currentPath.points.length > 0) {
             // this.state.paths.push([...this.state.currentPath.points]);
@@ -375,6 +450,8 @@ export class PaintTool {
                 color: this.state.currentPath.color,
                 paintAction: this.PaintActions.Draw,
                 blend: this.ctx.globalCompositeOperation,
+                polyFill: this.polyFill.value,
+                lineWidth: this.ctx.lineWidth,
             });
         }
     }
@@ -481,22 +558,23 @@ export class PaintTool {
 
         // Redraw all paths in the undo stack
         for (const path of this.state.paths) {
-            this.ctx.globalCompositeOperation = path.blend;
-            if(path.paintAction === this.PaintActions.Draw) {
-                this.ctx.strokeStyle = path.color;
-                this.ctx.beginPath();
-                for (let i = 1; i < path.points.length; i++) {
-                    // this.ctx.moveTo(path.points[i - 1].x, path.points[i - 1].y);
-                    this.ctx.lineTo(path.points[i].x, path.points[i].y);
-                }
-                this.ctx.stroke();
-            }
-            else if(path.paintAction === this.PaintActions.CanvasFill) {
-                this.ctx.beginPath();
-                this.ctx.fillStyle = path.color;
-                this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
-                this.ctx.fill();
-            }
+            this.drawCompletePath(path, this.ctx);
+            // this.ctx.globalCompositeOperation = path.blend;
+            // if(path.paintAction === this.PaintActions.Draw) {
+            //     this.ctx.strokeStyle = path.color;
+            //     this.ctx.beginPath();
+            //     for (let i = 1; i < path.points.length; i++) {
+            //         // this.ctx.moveTo(path.points[i - 1].x, path.points[i - 1].y);
+            //         this.ctx.lineTo(path.points[i].x, path.points[i].y);
+            //     }
+            //     this.ctx.stroke();
+            // }
+            // else if(path.paintAction === this.PaintActions.CanvasFill) {
+            //     this.ctx.beginPath();
+            //     this.ctx.fillStyle = path.color;
+            //     this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
+            //     this.ctx.fill();
+            // }
         }
 
         this.selectColor();
@@ -506,26 +584,51 @@ export class PaintTool {
         //     this.selectEraser();
     }
 
-    bakeOldestPath() {
-        // Remove oldest path and draw it on the history canvas
-        const path = this.state.paths.shift();
-
-        this.historyCtx.globalCompositeOperation = path.blend;
+    drawCompletePath(path, ctx) {
+        ctx.globalCompositeOperation = path.blend;
         if(path.paintAction === this.PaintActions.Draw) {
-            this.historyCtx.strokeStyle = path.color;
-            this.historyCtx.beginPath();
+            ctx.lineWidth = path.lineWidth;
+            ctx.strokeStyle = path.color;
+            ctx.fillStyle = path.color;
+            ctx.beginPath();
             for (let i = 1; i < path.points.length; i++) {
-                // this.historyCtx.moveTo(oldestPath.points[i - 1].x, oldestPath.points[i - 1].y);
-                this.historyCtx.lineTo(path.points[i].x, path.points[i].y);
+                ctx.lineTo(path.points[i].x, path.points[i].y);
             }
-            this.historyCtx.stroke();
+            ctx.stroke();
+            if(path.polyFill)
+                ctx.fill()
         }
         else if(path.paintAction === this.PaintActions.CanvasFill) {
-            this.historyCtx.beginPath();
-            this.historyCtx.fillStyle = path.color;
-            this.historyCtx.rect(0, 0, this.canvas.width, this.canvas.height);
-            this.historyCtx.fill();
+            ctx.beginPath();
+            ctx.fillStyle = path.color;
+            ctx.rect(0, 0, this.canvas.width, this.canvas.height);
+            ctx.fill();
         }
+    }
+
+    // Remove oldest path and draw it on the history canvas
+    bakeOldestPath() {
+        const path = this.state.paths.shift();
+        const ctx = this.historyCtx;
+        this.drawCompletePath(path, ctx);
+        // ctx.globalCompositeOperation = path.eraser ? 'destination-out' : path.blend;
+        // if(path.paintAction === this.PaintActions.Draw) {
+        //     ctx.lineWidth = path.polyFill ? 1 : path.lineWidth;
+        //     ctx.strokeStyle = path.color;
+        //     ctx.beginPath();
+        //     for (let i = 1; i < path.points.length; i++) {
+        //         ctx.lineTo(path.points[i].x, path.points[i].y);
+        //     }
+        //     ctx.stroke();
+        //     if(path.polyFill)
+        //         ctx.fill()
+        // }
+        // else if(path.paintAction === this.PaintActions.CanvasFill) {
+        //     ctx.beginPath();
+        //     ctx.fillStyle = path.color;
+        //     ctx.rect(0, 0, this.canvas.width, this.canvas.height);
+        //     ctx.fill();
+        // }
         
     }
 }
