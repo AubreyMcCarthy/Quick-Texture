@@ -428,9 +428,36 @@ export class PaintTool {
         var stop = function (e) {
             stopDrawing();
         };
+
+        let numberOfTouches = 0;
+        let tapInitiated = 0.0;
+        var detectTaps = function(e) {
+            if(e.touches.length > 1 && e.touches.length < 4) {
+                numberOfTouches = e.touches.length;
+                tapInitiated = Date.now();
+            }
+            else
+            {
+                numberOfTouches = 0;
+            }
+        }
+        var tapCompleted = function(e) {
+            if(numberOfTouches > 0)
+            {
+                const elapsedMillisec = Date.now() - tapInitiated;
+                if(elapsedMillisec > 1000)
+                    return;
+                if(numberOfTouches == 2)
+                    this.undo();
+                else
+                    this.redo();
+            }
+        }
         this.canvas.addEventListener("touchstart", start, false);
         this.canvas.addEventListener("touchmove", move, false);
         this.canvas.addEventListener("touchend", stop, false);
+        document.addEventListener("touchstart", detectTaps, false);
+        document.addEventListener("touchend", tapCompleted, false);
     };
 
     // prototype to	start drawing on pointer(microsoft ie) using canvas moveTo and lineTo
