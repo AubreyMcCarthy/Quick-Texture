@@ -51,6 +51,13 @@ export class PaintTool {
         ]
         this.blendMode = this.blendModes[0].value;
 
+        const PaintActions = {
+            CanvasFill: "CanvasFill",
+            Draw: "Draw",
+            Fill: "Fill",
+        }
+        this.PaintActions = PaintActions
+
         this.colors = [
             {
                 lable: "Black",
@@ -80,7 +87,7 @@ export class PaintTool {
                 lable: "Coral",
                 color: '#FB8F67',
             },
-            
+
             {
                 lable: "Naples Yellow",
                 color: '#F8E16C',
@@ -194,34 +201,72 @@ export class PaintTool {
         this.currentColor = this.addSelectButton("", this.color, controls);
 
         this.newCanvas();
+
+        // Add undo/redo buttons
+        const undoButton = document.createElement('button');
+        undoButton.textContent = 'Undo';
+        undoButton.addEventListener('click', () => this.undo());
+        // undoButton.onclick = () => this.undo;
+        controls.appendChild(undoButton);
+
+        const redoButton = document.createElement('button');
+        redoButton.textContent = 'Redo';
+        redoButton.addEventListener('click', () => this.redo());
+        // redoButton.onclick = () => this.redo;
+        controls.appendChild(redoButton);
     }
 
     dontDraw() { return true; }
 
     // function to setup a new canvas for drawing
     newCanvas() {
+        const state = {
+            isDrawing: false,
+            paths: [],
+            redoPaths: [],
+            maxUndoSteps: 20,
+            currentPath: [],
+        };
+        this.state = state;
+        
         const baseCanvas = this.gl.canvas;
         this.baseCanvas = baseCanvas;
 
-        var canvas = document.createElement('canvas');
+        const canvas = document.createElement('canvas');
         canvas.width = baseCanvas.width;
         canvas.height = baseCanvas.height;
         canvas.id = 'drawing-canvas';
         this.canvas = canvas;
         baseCanvas.parentNode.appendChild(canvas);
 
+        // Canvas setup
+        const historyCanvas = document.createElement('canvas');
+        this.historyCanvas = historyCanvas;
+        historyCanvas.width = canvas.width;
+        historyCanvas.height = canvas.height;
+
 
         // setup canvas
-        this.ctx = canvas.getContext("2d");
-        const ctx = this.ctx;
-        ctx.strokeStyle = this.color;
-        ctx.lineWidth = 5;
+        const ctx = canvas.getContext("2d");
+        this.ctx = ctx;
+        const historyCtx = historyCanvas.getContext('2d');
+        this.historyCtx = historyCtx;
+        // ctx.strokeStyle = this.color;
+        // ctx.lineWidth = 5;
+
+        [this.ctx, this.historyCtx].forEach(ctx => {
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = 5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        });
 
         // copy base contents
         baseCanvas.toBlob(async (blob) => {
             const img = new Image();
             img.onload = function () {
                 ctx.drawImage(img, 0, 0);
+                historyCtx.drawImage(img, 0, 0);
             };
             img.src = URL.createObjectURL(blob);
         }, 'image/png');
@@ -242,7 +287,6 @@ export class PaintTool {
 
     apply() {
         // new image with contents
-        console.log('closing paint tool');
         this.canvas.toBlob(async (blob) => {
             this.io.newImage(URL.createObjectURL(blob));
             this.close();
@@ -254,8 +298,10 @@ export class PaintTool {
         if (this.currentColor)
             this.currentColor.style.backgroundColor = this.color;
         this.ctx.globalCompositeOperation = this.blendMode;
+        // this.ctx.lineWidth = 1;
         this.ctx.beginPath();
         this.ctx.strokeStyle = this.color;
+        // this.ctx.fillStyle = this.color;
     }
 
     selectEraser(c) {
@@ -266,10 +312,71 @@ export class PaintTool {
     }
 
     fillColor() {
-        this.ctx.beginPath(); 
+        this.ctx.beginPath();
         this.ctx.fillStyle = this.color;
         this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fill(); 
+        this.ctx.fill();
+
+        this.addToUndoStack({
+            color: this.color,
+            paintAction: this.PaintActions.CanvasFill,
+            blend: this.ctx.globalCompositeOperation,
+        });
+    }
+
+    startDrawing(posX, posY) {
+        this.state.isDrawing = true;
+        this.state.currentPath = {
+            points: [],
+            color: this.color,
+            paintAction: this.PaintActions.Draw,
+        };
+        this.state.currentPath.points.push({ x: posX, y: posY });
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(posX, posY);
+    }
+
+    draw(posX, posY) {
+        if (!this.state.isDrawing) return;
+
+        const newPoint = { x: posX, y: posY };
+        this.state.currentPath.points.push(newPoint);
+
+        // const lastPoint = state.currentPath[state.currentPath.length - 2];
+        // activeCtx.beginPath();
+        // activeCtx.moveTo(lastPoint.x, lastPoint.y);
+        // activeCtx.lineTo(newPoint.x, newPoint.y);
+        // activeCtx.stroke();
+
+        // this.ctx.moveTo(lastPoint.x, lastPoint.y)
+        this.ctx.lineTo(posX, posY);
+        this.ctx.stroke();
+    }
+
+    addToUndoStack(a) {
+        this.state.paths.push(a);
+        this.state.redoPaths = [];
+
+        // If we exceed maxUndoSteps, bake the oldest path into history
+        if (this.state.paths.length > this.state.maxUndoSteps) {
+            this.bakeOldestPath();
+        }
+    }
+
+    stopDrawing() {
+        if (!this.state.isDrawing) return;
+
+        this.state.isDrawing = false;
+        if (this.state.currentPath.points.length > 0) {
+            // this.state.paths.push([...this.state.currentPath.points]);
+            this.addToUndoStack({
+                points: [...this.state.currentPath.points],
+                color: this.state.currentPath.color,
+                paintAction: this.PaintActions.Draw,
+                blend: this.ctx.globalCompositeOperation,
+            });
+        }
     }
 
 
@@ -320,22 +427,105 @@ export class PaintTool {
         const ctx = this.ctx;
         var clicked = 0;
 
+        const startDrawing = this.startDrawing.bind(this);
+        const draw = this.draw.bind(this);
+        // const stopDrawing = this.stopDrawing;
+        // this.stopDrawing.bind(state);
+        const stopDrawing = this.stopDrawing.bind(this);
         var start = function (e) {
             clicked = 1;
-            ctx.beginPath();
-            ctx.moveTo(e.offsetX, e.offsetY);
+            // ctx.beginPath();
+            // ctx.moveTo(e.offsetX, e.offsetY);
+            startDrawing(e.offsetX, e.offsetY);
         };
         var move = function (e) {
             if (clicked) {
-                ctx.lineTo(e.offsetX, e.offsetY);
-                ctx.stroke();
+                draw(e.offsetX, e.offsetY);
+                // ctx.lineTo(e.offsetX, e.offsetY);
+                // ctx.stroke();
             }
         };
         var stop = function (e) {
             clicked = 0;
+            // ctx.fill(); 
+            stopDrawing();
         };
         this.canvas.addEventListener("mousedown", start, false);
         this.canvas.addEventListener("mousemove", move, false);
         document.addEventListener("mouseup", stop, false);
     };
+
+    // Undo/Redo functions
+    undo() {
+        if (this.state.paths.length === 0) return;
+
+        const pathToUndo = this.state.paths.pop();
+        this.state.redoPaths.push(pathToUndo);
+        this.redrawCanvas();
+    }
+
+    redo() {
+        if (this.state.redoPaths.length === 0) return;
+
+        const pathToRedo = this.state.redoPaths.pop();
+        this.state.paths.push(pathToRedo);
+        this.redrawCanvas();
+    }
+
+    redrawCanvas() {
+        // Clear active canvas
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Copy history canvas content to active canvas
+        this.ctx.drawImage(this.historyCanvas, 0, 0);
+
+        // Redraw all paths in the undo stack
+        for (const path of this.state.paths) {
+            this.ctx.globalCompositeOperation = path.blend;
+            if(path.paintAction === this.PaintActions.Draw) {
+                this.ctx.strokeStyle = path.color;
+                this.ctx.beginPath();
+                for (let i = 1; i < path.points.length; i++) {
+                    // this.ctx.moveTo(path.points[i - 1].x, path.points[i - 1].y);
+                    this.ctx.lineTo(path.points[i].x, path.points[i].y);
+                }
+                this.ctx.stroke();
+            }
+            else if(path.paintAction === this.PaintActions.CanvasFill) {
+                this.ctx.beginPath();
+                this.ctx.fillStyle = path.color;
+                this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fill();
+            }
+        }
+
+        this.selectColor();
+        // TODO: store the current tool and restore it after redraw
+        // to avoid eraser edge case
+        // if(this.state.paths.at(-1).blend == 'destination-out')
+        //     this.selectEraser();
+    }
+
+    bakeOldestPath() {
+        // Remove oldest path and draw it on the history canvas
+        const path = this.state.paths.shift();
+
+        this.historyCtx.globalCompositeOperation = path.blend;
+        if(path.paintAction === this.PaintActions.Draw) {
+            this.historyCtx.strokeStyle = path.color;
+            this.historyCtx.beginPath();
+            for (let i = 1; i < path.points.length; i++) {
+                // this.historyCtx.moveTo(oldestPath.points[i - 1].x, oldestPath.points[i - 1].y);
+                this.historyCtx.lineTo(path.points[i].x, path.points[i].y);
+            }
+            this.historyCtx.stroke();
+        }
+        else if(path.paintAction === this.PaintActions.CanvasFill) {
+            this.historyCtx.beginPath();
+            this.historyCtx.fillStyle = path.color;
+            this.historyCtx.rect(0, 0, this.canvas.width, this.canvas.height);
+            this.historyCtx.fill();
+        }
+        
+    }
 }
