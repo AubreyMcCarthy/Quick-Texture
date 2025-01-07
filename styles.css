@@ -4,7 +4,8 @@ body {
   margin: 20px auto;
   padding: 0 20px;
   color: white;
-  background-color: #212121
+  background-color: #212121;
+  touch-action: none;
 }
 
 .doc {
