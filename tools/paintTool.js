@@ -17,22 +17,6 @@ export class PaintTool {
             defaultValue: false,
         }
 
-        // this.penModes = [
-        //     {
-        //         label: "Draw",
-        //         value: "draw",
-        //     },
-        //     {
-        //         label: "Erase",
-        //         value: "erase",
-        //     },
-        //     {
-        //         label: "Poly Fill",
-        //         value: "poly-fill",
-        //     },
-        // ];
-        // this.penMode = this.penModes[0].value;
-
         this.blendModes = [
             {
                 label: "Normal",
@@ -238,14 +222,6 @@ export class PaintTool {
         blendSelect.id = "blend-mode-select";
         blendSelect.value = this.blendMode;
 
-        // const modeSelect = this.addSelect(this.penModes, controls);
-        // modeSelect.addEventListener("change", (event) => {
-        //     this.penMode = event.target.value;
-        //     this.selectColor();
-        // });
-        // modeSelect.id = "pen-mode-select";
-        // modeSelect.value = this.penMode;
-
         const hr = document.createElement('hr');
         controls.appendChild(hr);
         this.currentColor = this.addSelectButton("", controls);
@@ -257,13 +233,11 @@ export class PaintTool {
         const undoButton = document.createElement('button');
         undoButton.innerHTML = '&ShortLeftArrow;';
         undoButton.addEventListener('click', () => this.undo());
-        // undoButton.onclick = () => this.undo;
         controls.appendChild(undoButton);
 
         const redoButton = document.createElement('button');
         redoButton.innerHTML = '&rightarrow;';
         redoButton.addEventListener('click', () => this.redo());
-        // redoButton.onclick = () => this.redo;
         controls.appendChild(redoButton);
     }
 
@@ -297,13 +271,10 @@ export class PaintTool {
         historyCanvas.height = canvas.height;
 
 
-        // setup canvas
         const ctx = canvas.getContext("2d");
         this.ctx = ctx;
         const historyCtx = historyCanvas.getContext('2d');
         this.historyCtx = historyCtx;
-        // ctx.strokeStyle = this.color;
-        // ctx.lineWidth = 5;
 
         [this.ctx, this.historyCtx].forEach(ctx => {
             ctx.strokeStyle = this.color;
@@ -312,7 +283,7 @@ export class PaintTool {
             ctx.lineJoin = 'round';
         });
 
-        // copy base contents
+        // copy existing contents to paint tool's canvas
         baseCanvas.toBlob(async (blob) => {
             const img = new Image();
             img.onload = function () {
@@ -333,7 +304,6 @@ export class PaintTool {
     close() {
         this.baseCanvas.style.display = 'inline';
         this.canvas.remove();
-
     }
 
     apply() {
@@ -346,37 +316,26 @@ export class PaintTool {
     }
 
     selectColor() {
-
-        if (this.currentColor)
+        if(this.eraser.value)
         {
-            if(this.eraser.value)
+            this.ctx.globalCompositeOperation = 'destination-out';
+            if (this.currentColor)
             {
                 this.currentColor.style.backgroundColor = this.eraser.color;
                 this.currentColor.innerHTML = this.eraser.label;
             }
-            else
+        }
+        else
+        {
+            this.ctx.globalCompositeOperation = this.blendMode;
+            if (this.currentColor)
             {
                 this.currentColor.style.backgroundColor = this.color;
                 this.currentColor.innerHTML = "";
             }
         }
-        if(this.eraser.value)
-        {
-            this.ctx.globalCompositeOperation = 'destination-out';
-        }
-        else
-        {
-            this.ctx.globalCompositeOperation = this.blendMode;
-        }
 
-        if(this.polyFill.value)
-        {
-            this.ctx.lineWidth = 1;
-        }
-        else
-        {
-            this.ctx.lineWidth = this.lineWidth;
-        }
+        this.ctx.lineWidth = this.polyFill.value ? 1 : this.lineWidth;
         
         this.ctx.fillStyle = this.color;
         this.ctx.strokeStyle = this.color;
@@ -415,13 +374,6 @@ export class PaintTool {
         const newPoint = { x: posX, y: posY };
         this.state.currentPath.points.push(newPoint);
 
-        // const lastPoint = state.currentPath[state.currentPath.length - 2];
-        // activeCtx.beginPath();
-        // activeCtx.moveTo(lastPoint.x, lastPoint.y);
-        // activeCtx.lineTo(newPoint.x, newPoint.y);
-        // activeCtx.stroke();
-
-        // this.ctx.moveTo(lastPoint.x, lastPoint.y)
         this.ctx.lineTo(posX, posY);
         this.ctx.stroke();
     }
@@ -459,72 +411,72 @@ export class PaintTool {
 
     // prototype to	start drawing on touch using canvas moveTo and lineTo
     drawTouch() {
-        const ctx = this.ctx;
+        const startDrawing = this.startDrawing.bind(this);
+        const draw = this.draw.bind(this);
+        const stopDrawing = this.stopDrawing.bind(this);
         var start = function (e) {
-            ctx.beginPath();
             const x = e.changedTouches[0].pageX - e.touches[0].target.offsetLeft;
             const y = e.changedTouches[0].pageY - e.touches[0].target.offsetTop;
-            ctx.moveTo(x, y);
+            startDrawing(x, y);
         };
         var move = function (e) {
             e.preventDefault();
             const x = e.changedTouches[0].pageX - e.touches[0].target.offsetLeft;
             const y = e.changedTouches[0].pageY - e.touches[0].target.offsetTop;
-            ctx.lineTo(x, y);
-            ctx.stroke();
+            draw(x, y);
+        };
+        var stop = function (e) {
+            stopDrawing();
         };
         this.canvas.addEventListener("touchstart", start, false);
         this.canvas.addEventListener("touchmove", move, false);
+        this.canvas.addEventListener("touchend", stop, false);
     };
 
     // prototype to	start drawing on pointer(microsoft ie) using canvas moveTo and lineTo
     drawPointer() {
-        const ctx = this.ctx;
+        const startDrawing = this.startDrawing.bind(this);
+        const draw = this.draw.bind(this);
+        const stopDrawing = this.stopDrawing.bind(this);
         var start = function (e) {
             e = e.originalEvent;
-            ctx.beginPath();
             const x = e.offsetX;
             const y = e.offsetY;
-            ctx.moveTo(x, y);
+            startDrawing(x, y);
         };
         var move = function (e) {
             e.preventDefault();
             e = e.originalEvent;
             const x = e.offsetX;
             const y = e.offsetY;
-            ctx.moveTo(x, y);
-            ctx.stroke();
+            draw(x, y);
+        };
+        var stop = function (e) {
+            stopDrawing();
         };
         this.canvas.addEventListener("MSPointerDown", start, false);
         this.canvas.addEventListener("MSPointerMove", move, false);
+        document.addEventListener("MSPointerUp", stop, false);
     };
 
     // prototype to	start drawing on mouse using canvas moveTo and lineTo
     drawMouse() {
-        const ctx = this.ctx;
         var clicked = 0;
 
         const startDrawing = this.startDrawing.bind(this);
         const draw = this.draw.bind(this);
-        // const stopDrawing = this.stopDrawing;
-        // this.stopDrawing.bind(state);
         const stopDrawing = this.stopDrawing.bind(this);
         var start = function (e) {
             clicked = 1;
-            // ctx.beginPath();
-            // ctx.moveTo(e.offsetX, e.offsetY);
             startDrawing(e.offsetX, e.offsetY);
         };
         var move = function (e) {
             if (clicked) {
                 draw(e.offsetX, e.offsetY);
-                // ctx.lineTo(e.offsetX, e.offsetY);
-                // ctx.stroke();
             }
         };
         var stop = function (e) {
             clicked = 0;
-            // ctx.fill(); 
             stopDrawing();
         };
         this.canvas.addEventListener("mousedown", start, false);
@@ -559,29 +511,9 @@ export class PaintTool {
         // Redraw all paths in the undo stack
         for (const path of this.state.paths) {
             this.drawCompletePath(path, this.ctx);
-            // this.ctx.globalCompositeOperation = path.blend;
-            // if(path.paintAction === this.PaintActions.Draw) {
-            //     this.ctx.strokeStyle = path.color;
-            //     this.ctx.beginPath();
-            //     for (let i = 1; i < path.points.length; i++) {
-            //         // this.ctx.moveTo(path.points[i - 1].x, path.points[i - 1].y);
-            //         this.ctx.lineTo(path.points[i].x, path.points[i].y);
-            //     }
-            //     this.ctx.stroke();
-            // }
-            // else if(path.paintAction === this.PaintActions.CanvasFill) {
-            //     this.ctx.beginPath();
-            //     this.ctx.fillStyle = path.color;
-            //     this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
-            //     this.ctx.fill();
-            // }
         }
 
         this.selectColor();
-        // TODO: store the current tool and restore it after redraw
-        // to avoid eraser edge case
-        // if(this.state.paths.at(-1).blend == 'destination-out')
-        //     this.selectEraser();
     }
 
     drawCompletePath(path, ctx) {
@@ -610,25 +542,6 @@ export class PaintTool {
     bakeOldestPath() {
         const path = this.state.paths.shift();
         const ctx = this.historyCtx;
-        this.drawCompletePath(path, ctx);
-        // ctx.globalCompositeOperation = path.eraser ? 'destination-out' : path.blend;
-        // if(path.paintAction === this.PaintActions.Draw) {
-        //     ctx.lineWidth = path.polyFill ? 1 : path.lineWidth;
-        //     ctx.strokeStyle = path.color;
-        //     ctx.beginPath();
-        //     for (let i = 1; i < path.points.length; i++) {
-        //         ctx.lineTo(path.points[i].x, path.points[i].y);
-        //     }
-        //     ctx.stroke();
-        //     if(path.polyFill)
-        //         ctx.fill()
-        // }
-        // else if(path.paintAction === this.PaintActions.CanvasFill) {
-        //     ctx.beginPath();
-        //     ctx.fillStyle = path.color;
-        //     ctx.rect(0, 0, this.canvas.width, this.canvas.height);
-        //     ctx.fill();
-        // }
-        
+        this.drawCompletePath(path, ctx);        
     }
 }
