@@ -209,6 +209,8 @@ export class PaintTool {
         for (let i = 0; i < this.colors.length; i++) {
             this.addColorButton(this.colors[i], controls);
         }
+        // controls.appendChild(document.createElement('hr'));
+
         this.addToolButton(this.eraser, controls);
         this.addToolButton(this.polyFill, controls);
         const fillBtn = this.addSelectButton("🪣", controls);
@@ -225,6 +227,20 @@ export class PaintTool {
         const hr = document.createElement('hr');
         controls.appendChild(hr);
         this.currentColor = this.addSelectButton("", controls);
+
+        const colorSelect = document.createElement('input');
+        colorSelect.type = 'color';
+        colorSelect.className = 'color-picker';
+        colorSelect.addEventListener("change", (event) => {
+            this.color = event.target.value;
+            this.selectColor();
+        });
+        controls.appendChild(colorSelect);
+        const colorSelectLabel = document.createElement('p');
+        colorSelectLabel.innerText = '💉';
+        controls.appendChild(colorSelectLabel);
+        // <input type="color" id="html5colorpicker" onchange="clickColor(0, -1, -1, 5)" value="#ff0000" style="width:85%;"></input>
+
         this.setButtonColor(this.currentColor, this.color);
 
         this.newCanvas();
