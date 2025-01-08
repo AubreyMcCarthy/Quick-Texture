@@ -4,8 +4,6 @@ export class PaintTool {
         this.buttons = [];
 
         this.lineWidth = 5;
-        this.minDist = 5.0;
-        this. minDistSquared = this.minDist * this.minDist;
         
         this.eraser = {
             label: "🧽",
@@ -385,11 +383,6 @@ export class PaintTool {
 
         const newPoint = { x: posX, y: posY };
         const lastPoint = this.state.currentPath.points.at(-1);
-        const deltaX = newPoint.x  - lastPoint.x;
-        const deltaY = newPoint.y  - lastPoint.y;
-        // if(deltaX * deltaX + deltaY * deltaY < this.minDistSquared)
-        //     return;
-            // d=√((x_2-x_1)²+(y_2-y_1)²)
         this.state.currentPath.points.push(newPoint);
 
         this.ctx.beginPath();
