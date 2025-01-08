@@ -452,32 +452,47 @@ export class PaintTool {
         this.canvas.addEventListener("touchmove", move, false);
         this.canvas.addEventListener("touchend", stop, false);
 
-        // let numberOfTouches = 0;
-        // let tapInitiated = 0.0;
-        // var detectTaps = function(e) {
-        //     if(e.touches.length > 1 && e.touches.length < 4) {
-        //         numberOfTouches = e.touches.length;
-        //         tapInitiated = Date.now();
-        //     }
-        //     else
-        //     {
-        //         numberOfTouches = 0;
-        //     }
-        // }
-        // var tapCompleted = function(e) {
-        //     if(numberOfTouches > 0)
-        //     {
-        //         const elapsedMillisec = Date.now() - tapInitiated;
-        //         if(elapsedMillisec > 1000)
-        //             return;
-        //         if(numberOfTouches == 2)
-        //             this.undo();
-        //         else
-        //             this.redo();
-        //     }
-        // }
-        // document.addEventListener("touchstart", detectTaps, false);
-        // document.addEventListener("touchend", tapCompleted, false);
+        let touchStartTime = 0;
+        let touchCount = 0;
+        const TAP_THRESHOLD = 200; // Maximum time in ms 
+
+        document.addEventListener('touchstart', (e) => {
+            touchCount = e.touches.length;
+            touchStartTime = Date.now();
+
+            // Prevent default behavior like scrolling or zooming
+            if (touchCount >= 2) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchend', (e) => {
+            const touchDuration = Date.now() - touchStartTime;
+
+            if (touchDuration < TAP_THRESHOLD) {
+                if (touchCount === 2) {
+                    this.undo();
+                }
+                else if (touchCount === 3) {
+                    this.redo();
+                }
+            }
+            touchCount = 0;
+        });
+
+        // Prevent default touch behaviors that might interfere
+        document.addEventListener('touchmove', (e) => {
+            if (touchCount >= 2) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Prevent context menu from appearing on long press
+        document.addEventListener('contextmenu', (e) => {
+            if (touchCount >= 2) {
+                e.preventDefault();
+            }
+        });
     };
 
     // prototype to	start drawing on pointer(microsoft ie) using canvas moveTo and lineTo
