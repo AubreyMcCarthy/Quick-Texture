@@ -4,6 +4,8 @@ export class PaintTool {
         this.buttons = [];
 
         this.lineWidth = 5;
+        this.minDist = 5.0;
+        this. minDistSquared = this.minDist * this.minDist;
         
         this.eraser = {
             label: "🧽",
@@ -363,17 +365,35 @@ export class PaintTool {
             paintAction: this.PaintActions.Draw,
         };
         this.state.currentPath.points.push({ x: posX, y: posY });
+        this.state.currentPath.points.push({ x: posX, y: posY });
 
+        // this.ctx.beginPath();
+        // this.ctx.moveTo(posX, posY);
+        // this.ctx.stroke();
+        if(!this.polyFill.value)
+            this.drawPoint(posX, posY)
+    }
+
+    drawPoint(x, y) {
         this.ctx.beginPath();
-        this.ctx.moveTo(posX, posY);
+        this.ctx.arc(x, y, this.lineWidth * 0.5, 0, Math.PI * 2);
+        this.ctx.fill();
     }
 
     draw(posX, posY) {
         if (!this.state.isDrawing) return;
 
         const newPoint = { x: posX, y: posY };
+        const lastPoint = this.state.currentPath.points.at(-1);
+        const deltaX = newPoint.x  - lastPoint.x;
+        const deltaY = newPoint.y  - lastPoint.y;
+        // if(deltaX * deltaX + deltaY * deltaY < this.minDistSquared)
+        //     return;
+            // d=√((x_2-x_1)²+(y_2-y_1)²)
         this.state.currentPath.points.push(newPoint);
 
+        this.ctx.beginPath();
+        this.ctx.moveTo(lastPoint.x, lastPoint.y);
         this.ctx.lineTo(posX, posY);
         this.ctx.stroke();
     }
@@ -391,12 +411,18 @@ export class PaintTool {
     stopDrawing() {
         if (!this.state.isDrawing) return;
 
-        if(this.polyFill.value)
+        if(this.polyFill.value) {
+            this.ctx.beginPath();
+            const firstPoint = this.state.currentPath.points.at(-1)
+            this.ctx.moveTo(firstPoint.x, firstPoint.y)
+            this.state.currentPath.points.forEach(point => {
+                this.ctx.lineTo(point.x, point.y);
+            })
             this.ctx.fill();
+        }
 
         this.state.isDrawing = false;
         if (this.state.currentPath.points.length > 0) {
-            // this.state.paths.push([...this.state.currentPath.points]);
             this.addToUndoStack({
                 points: [...this.state.currentPath.points],
                 color: this.state.currentPath.color,
